@@ -21,7 +21,7 @@ def load_data(messages_filepath, categories_filepath):
     
     categories = pd.read_csv(categories_filepath)
     
-    df = messages.merge(categories, on='id')
+    df = messages.merge(categories, on='id', how = 'inner')
 
     return df 
 
@@ -30,28 +30,33 @@ def clean_data(df):
     """
     Clear the dataframe and return it.
     """
-    # create a dataframe of individual category columns
-    categories = df.categories.str.split(';', expand = True)
-    categories.columns = categories.iloc[0]
-    categories = categories.rename(columns = lambda x : str(x)[:-2])
+    # creating a dataframe of the 36 individual category columns
+    categories = df.categories.str.split(';', expand=True)
+    #renaming the categories columns
+    row = categories.iloc[0,:].copy()
+    category_colnames = row.apply(lambda x: x[:-2])
+    categories.columns = category_colnames
 
+    #converting the values of string to just 0 or 1
     for column in categories:
-    # set each value to be the last character of the string
-    categories[column] = categories[column].astype(str).str.slice(start=-1)
-    categories[column] = pd.to_numeric(categories[column])
+        # set each value to be the last character of the string
+        categories[column] = categories[column].astype(str).str[-1] 
+        categories[column] = categories[column].astype(int)
+
+
+    # Replace rows with a related value of 2 from the dataset
+    categories['related'].replace({2: 0}, inplace=True)
+
+    # Drop child_alone from categories dataframe.
+    categories.drop('child_alone', axis = 1, inplace = True)
 
     df.drop('categories', axis=1, inplace=True)
-    df = df.join(categories)
 
-    # check number of duplicates
-    number_duplicates = df.duplicated().sum()
+    df = pd.concat([df, categories], axis = 1)
 
-    if number_duplicates != 0:
-        df = df.drop_duplicates()
-        if df.duplicated().sum() == 0:
-            continue
-        else:
-            print('Not all duplicates were removed.')
+    # drop duplicates
+    df = df.drop_duplicates()
+        
     return df
 
 
@@ -59,7 +64,7 @@ def save_data(df, database_filename):
     """
     Saves dataframe as sql file
     """
-    engine = create_engine('sqlite:///{}'.format(database_filename))
+    engine = create_engine('sqlite:///' + database_filename)
     
     df.to_sql('disaster_response', engine, index=False)
 
