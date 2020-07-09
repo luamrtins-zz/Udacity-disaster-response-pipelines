@@ -44,7 +44,8 @@ def index():
     genre_names = list(genre_counts.index)
     
     df_cat = df.iloc[:,4:]
-    count_cat = pd.DataFrame(df_cat.sum(axis=0))
+    count_cat = pd.DataFrame(df_cat.sum(axis=0)).rename(columns = {'0': 'count'})
+    count_col = count_cat['count']
     cat_names = list(count_cat.index)
     
     # create visuals
@@ -72,7 +73,7 @@ def index():
         {
             'data': [
                 Bar(
-                    x= 0,
+                    x= count_col,
                     y= cat_names
                 )
             ],
