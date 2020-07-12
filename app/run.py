@@ -43,10 +43,9 @@ def index():
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
     
-    df_cat = df.iloc[:,4:]
-    count_cat = pd.DataFrame(df_cat.sum(axis=0)).rename(columns = {'0': 'count'})
-    count_col = count_cat['count']
-    cat_names = list(count_cat.index)
+    target = df.drop(['message', 'genre', 'id', 'original'], axis = 1)
+    target_column = target.columns
+    counts = target.sum().values
     
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
@@ -54,8 +53,8 @@ def index():
         {
             'data': [
                 Bar(
-                    x=genre_names,
-                    y=genre_counts
+                    x=target_column,
+                    y=counts
                 )
             ],
 
